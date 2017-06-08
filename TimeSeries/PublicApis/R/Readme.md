@@ -85,12 +85,23 @@ The first step is simply to connect to AQTS and grab a year's worth of data for 
                                       queryFrom = "2012-01-01T00:00:00Z",
                                       queryTo   = "2013-01-01T00:00:00Z")
 ```
-Now the points are in R data frames in the `json` object, so we can simply plot them as an XY plot.
+Now the points are in R data frames in the `json` object, so we can extract the numeric values and plot them as an XY plot.
 ```R
+# Extract numeric values from points
+> values = matrix(unlist(lapply(json$Points$Values, function(v) v$NumericValue)), ncol = 2, byrow = TRUE)
+
 # Plot stage vs. discharge, in logspace, with labeled axis
-> plot(json$Points$NumericValue1, json$Points$NumericValue2, log = "xy",
+> plot(values[,1], values[,2], log = "xy",
        xlab = json$TimeSeries$Identifier[1],
        ylab = json$TimeSeries$Identifier[2])
+```
+
+The values can alternately be extracted using the JavaScript Underscore library.
+```R
+> require("V8")
+> ct = v8()
+> ct$source(system.file("js/underscore.js", package="V8"))
+> values = ct$call("_.map", json$Points, JS("function(point){return _.map(point.Values, function(value) {return value.NumericValue})}"))
 ```
 
 And here is the plot, which should match the rating curve for 2012.
@@ -130,7 +141,8 @@ Because the StackOverflow example is expecting wind speed in meters-per-second, 
 Now we plot the points, using the code from the StackOverflow post.
 
 ```R
-> plot.windrose(spd = json$Points$NumericValue1, dir = json$Points$NumericValue2)
+> values = matrix(unlist(lapply(json$Points$Values, function(v) v$NumericValue)), ncol = 2, byrow = TRUE)
+> plot.windrose(spd = values[,1], dir = values[,2])
 ```
 
 Nifty neato!
